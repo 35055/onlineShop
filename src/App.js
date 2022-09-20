@@ -1,77 +1,117 @@
+import { useState, useEffect, createElement } from "react";
+import { Route, Routes } from "react-router-dom";
+import axios from "axios";
+import Card from "./components/Card";
+import Header from "./components/Header";
+import Drawer from "./components/Drawer";
+
 function App() {
+  const [items, setItems] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+  const [searchValue, setSearchValue] = useState("");
+
+  const [cartOpened, setCartOpened] = useState(false);
+
+  useEffect(() => {
+    axios
+      .get("https://6316da7fcb0d40bc41450420.mockapi.io/items")
+      .then((res) => {
+        setItems(res.data);
+      });
+    axios
+      .get("https://6316da7fcb0d40bc41450420.mockapi.io/cart")
+      .then((res) => {
+        setCartItems(res.data);
+      });
+  }, []);
+
+  const onRemoveItem = async (id) => {
+    await setCartItems((prev) => prev.filter((item) => item.id !== id));
+    await axios.delete(
+      `https://6316da7fcb0d40bc41450420.mockapi.io/cart/${id}`
+    );
+  };
+
+  const onAddToCart = async (obj) => {
+    await setCartItems((prev) => [...prev, obj]);
+    await axios.post("https://6316da7fcb0d40bc41450420.mockapi.io/cart", obj);
+  };
+
+  const onAddToFavorite = (obj) => {
+    setFavorites((prev) => [...prev, obj]);
+    axios.post("https://6316da7fcb0d40bc41450420.mockapi.io/favorites", obj);
+  };
+
+  const onChangeSearchInput = (event) => {
+    setSearchValue(event.target.value);
+  };
+
   return (
     <div className="wrapper clear">
-      <header className="d-flex justify-between align-center p-40">
-        <div className="align-center d-flex">
-          <img width={40} height={40} src="/img/logo.png" alt=""></img>
-          <div>
-            <h3 className="text-uppercase">React Sneakers</h3>
-            <p className="opacity-5">Магазин лучших крососвок</p>
-          </div>
-        </div>
-        <ul className="d-flex">
-          <li className="mr-30">
-            <img width={18} height={18} src="/img/card.svg" alt=""></img>
-            <span>1250 руб.</span>
-          </li>
-          <li>
-          <img width={18} height={18} src="/img/user.svg" alt=""></img>
-          </li>
-        </ul>
-      </header>
+      {cartOpened && (
+        <Drawer
+          onRemove={onRemoveItem}
+          items={cartItems}
+          onCloseCart={() => setCartOpened(false)}
+        />
+      )}
+
+      {createElement("h2", {
+        children: "",
+      })}
+
+      <Header onClickCart={() => setCartOpened(true)} />
+      <Routes>
+        <Route
+          path="/element"
+          element={<div>Murat is good boy, good boys just sucks</div>}
+        />
+      </Routes>
+
       <div className="content p-40">
-        <h1 className="mb-40">Все кросовки</h1>
-
-        <div className="d-flex">
-        <div className="card">
-          <img width={133} height={112} src="img/1.jpg" alt=""></img>
-          <h5>Мужские Кросовки nike Blazer Mid Suede</h5>
-          <div className="d-flex justify-between align-center">
-            <div className="d-flex flex-column">
-              <span>Цена:</span>
-              <b>12 999 руб.</b>
-            </div>
-            <button className="button"><img width={11} height={11} src="/img/plus.svg" alt=""></img></button>
+        <div className="d-flex align-center mb-40 justify-between">
+          <h1>
+            {searchValue.length === 0
+              ? "Все кроссовки"
+              : `Поиск по запросу: "${searchValue}"`}
+          </h1>
+          <div className="search-block d-flex align-center">
+            <img width={15} height={15} src="/img/search.svg" alt=""></img>
+            {searchValue && (
+              <img
+                onClick={() => setSearchValue("")}
+                className="clear removeBtn cu-p"
+                width={18}
+                height={18}
+                src="/img/times-regular.svg"
+                alt="Clear"
+              ></img>
+            )}
+            <input
+              onChange={onChangeSearchInput}
+              value={searchValue}
+              placeholder="Поиск..."
+            ></input>
           </div>
         </div>
 
-        <div className="card">
-          <img width={133} height={112} src="img/2.jpg" alt=""></img>
-          <h5>Мужские Кросовки nike Blazer Mid Suede</h5>
-          <div className="d-flex justify-between align-center">
-            <div className="d-flex flex-column">
-              <span>Цена:</span>
-              <b>12 999 руб.</b>
-            </div>
-            <button className="button"><img width={11} height={11} src="/img/plus.svg" alt=""></img></button>
-          </div>
+        <div className="d-flex flex-wrap">
+          {items
+            .filter((item) =>
+              item.imgUrl.toLowerCase().includes(searchValue.toLowerCase())
+            )
+            .map((item) => (
+              <Card
+                key={item.imgUrl}
+                title={item.name}
+                price={item.price}
+                imgUrl={item.imgUrl}
+                onFavorite={(obj) => onAddToFavorite(obj)}
+                onPlus={(obj) => onAddToCart(obj)}
+              />
+            ))}
         </div>
-
-        <div className="card">
-          <img width={133} height={112} src="img/3.jpg" alt=""></img>
-          <h5>Мужские Кросовки nike Blazer Mid Suede</h5>
-          <div className="d-flex justify-between align-center">
-            <div className="d-flex flex-column">
-              <span>Цена:</span>
-              <b>12 999 руб.</b>
-            </div>
-            <button className="button"><img width={11} height={11} src="/img/plus.svg" alt=""></img></button>
-          </div>
-        </div>
-
-        <div className="card">
-          <img width={133} height={112} src="img/4.jfif" alt=""></img>
-          <h5>Мужские Кросовки nike Blazer Mid Suede</h5>
-          <div className="d-flex justify-between align-center">
-            <div className="d-flex flex-column">
-              <span>Цена:</span>
-              <b>12 999 руб.</b>
-            </div>
-            <button className="button"><img width={11} height={11} src="/img/plus.svg" alt=""></img></button>
-          </div>
-        </div>
-        </div>
-        
       </div>
     </div>
   );
